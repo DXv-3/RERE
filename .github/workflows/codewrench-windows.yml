@@ -1,0 +1,82 @@
+name: CodeWrench Windows Installer
+
+# Builds the unsigned CodeWrench Windows installer on a GitHub-hosted runner and
+# attaches it to the run. Started by hand only; nothing here runs on a push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_version:
+        description: Version stamped into the installer, for example 0.0.45-preview.20261003.26
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codewrench-windows
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      WORKBENCH_PREVIEW_BUILD: "1"
+    steps:
+      # The vendored .repos tree holds orphaned gitlinks and is not needed to build.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            /*
+            !/.repos/
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1
+        with:
+          node-version-file: package.json
+          cache: false
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install --filter=@t3tools/desktop... --filter=t3... --filter=@t3tools/web... --filter=@t3tools/scripts...
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+
+      # The resource monitor links against the Spectre-mitigated MSVC runtime.
+      - name: Install Spectre-mitigated MSVC libs
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installPath = & $vswhere -products * -latest -property installationPath
+          $setupExe = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+          $proc = Start-Process -FilePath $setupExe `
+            -ArgumentList "modify", "--installPath", "`"$installPath`"", "--add", `
+            "Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre", "--quiet", "--norestart" `
+            -Wait -PassThru -NoNewWindow
+          if ($null -eq $proc -or $proc.ExitCode -ne 0) {
+            $code = if ($null -ne $proc) { $proc.ExitCode } else { 1 }
+            Write-Error "Visual Studio Installer failed with exit code $code"
+            exit $code
+          }
+
+      - name: Build installer
+        run: node scripts/build-desktop-artifact.ts --platform win --target nsis --arch x64 --build-version "${{ inputs.build_version }}" --output-dir release --verbose
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: CodeWrench-windows-x64-${{ inputs.build_version }}
+          path: |
+            release/*.exe
+            release/*.yml
+          if-no-files-found: error
+          retention-days: 14

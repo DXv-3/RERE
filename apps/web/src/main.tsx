@@ -1,0 +1,76 @@
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { createHashHistory, createBrowserHistory } from "@tanstack/react-router";
+
+import "./index.css";
+
+import { prepareProviderAuthDelivery } from "./providerAuthDelivery";
+import { isElectron } from "./env";
+import { hasCloudPublicConfig } from "./cloud/publicConfig";
+import { getRouter } from "./router";
+import {
+  syncDocumentElectronPlatformClasses,
+  syncDocumentWindowControlsOverlayClass,
+} from "./lib/windowControlsOverlay";
+import { AppRoot } from "./AppRoot";
+import { clearChunkReloadGuard, reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
+
+prepareProviderAuthDelivery();
+
+// Electron loads the app from a file-backed shell, so hash history avoids path resolution issues.
+const history = isElectron ? createHashHistory() : createBrowserHistory();
+
+const router = getRouter(history);
+
+if (isElectron) {
+  syncDocumentElectronPlatformClasses(navigator.platform);
+  syncDocumentWindowControlsOverlayClass();
+}
+
+// A failed split-chunk fetch usually means the hashed assets went stale under
+// a deploy; one guarded reload picks up the fresh index.html.
+let chunkLoadFailed = false;
+let reloadScheduled = false;
+window.addEventListener("vite:preloadError", (event) => {
+  chunkLoadFailed = true;
+  if (reloadOnceForChunkLoadError()) {
+    reloadScheduled = true;
+    event.preventDefault();
+  }
+});
+
+const app = <AppRoot router={router} />;
+
+// Account sign-in is cloud-only. Loading it as a split chunk keeps it out of
+// the startup graph for local-mode users.
+const managedAuthShellModule = hasCloudPublicConfig()
+  ? import("./components/account/ManagedAuthShell")
+  : null;
+
+// The index.html boot splash lives inside #root, and React's first commit
+// clears it. Resolve everything that first commit needs, the selected
+// account sign-in shell and the initial route's split chunks, before
+// rendering, so the splash holds until real UI paints instead of dropping to
+// a blank window while chunks download.
+export const startup = Promise.all([
+  managedAuthShellModule?.then((module) => module.default) ?? null,
+  router.load(),
+])
+  .then(([ManagedAuthShell]) => {
+    // A route chunk failure still resolves router.load(): the error is parked in
+    // the lazy component and surfaces through the route error boundary. Skip the
+    // paint when a reload is on its way, and only re-arm the guard after a boot
+    // that fetched every chunk it asked for.
+    if (reloadScheduled) return;
+    if (!chunkLoadFailed) clearChunkReloadGuard();
+    ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+      <React.StrictMode>
+        {ManagedAuthShell ? <ManagedAuthShell>{app}</ManagedAuthShell> : app}
+      </React.StrictMode>,
+    );
+  })
+  .catch((error: unknown) => {
+    // Let the bootstrap entry show the error unless a reload is already scheduled.
+    if (reloadScheduled) return;
+    throw error;
+  });

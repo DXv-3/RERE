@@ -1,0 +1,467 @@
+import type { ExpoConfig } from "expo/config";
+
+import { BRAND_ASSET_PATHS } from "../../scripts/lib/brand-assets.ts";
+import { loadRepoEnv } from "../../scripts/lib/public-config.ts";
+
+type AppVariant = "development" | "preview" | "production";
+
+const repoEnv = loadRepoEnv();
+Object.assign(process.env, repoEnv);
+
+const APP_VARIANT = resolveAppVariant(repoEnv.APP_VARIANT);
+const isIosPersonalTeamBuild = repoEnv.T3CODE_IOS_PERSONAL_TEAM === "1";
+const runtimeVersionPolicy =
+  process.env.MOBILE_VERSION_POLICY ??
+  (APP_VARIANT === "development" ? "appVersion" : "fingerprint");
+
+const personalTeamBundleIdentifier = repoEnv.T3CODE_IOS_PERSONAL_TEAM_BUNDLE_ID?.trim();
+const IOS_BUNDLE_IDENTIFIER_PATTERN = /^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
+
+// The Expo project that builds and updates CodeWrench (@candidstudios/codewrench).
+const EAS_PROJECT_ID = "c761616c-fd44-4c4b-92d4-da3dec511b0b";
+
+const fromRepoRoot = (relativePath: string) => `../../${relativePath}`;
+// Android layers are rendered by scripts/export-android-icons.ts from the Icon Composer sources.
+// The wordmark sits inside the adaptive safe zone; the variant artwork is a full-bleed background.
+const androidAdaptiveForeground = "./assets/android-icon-foreground.png";
+
+if (
+  isIosPersonalTeamBuild &&
+  (!personalTeamBundleIdentifier ||
+    !IOS_BUNDLE_IDENTIFIER_PATTERN.test(personalTeamBundleIdentifier))
+) {
+  throw new Error(
+    "T3CODE_IOS_PERSONAL_TEAM_BUNDLE_ID must be a reverse-DNS identifier such as com.example.codewrench when T3CODE_IOS_PERSONAL_TEAM=1.",
+  );
+}
+
+const DEVELOPMENT_ASSETS = {
+  appIcon: fromRepoRoot(BRAND_ASSET_PATHS.productionIosIconPng),
+  splashIcon: fromRepoRoot(BRAND_ASSET_PATHS.productionMarkPng),
+  androidAdaptiveForeground,
+  androidAdaptiveBackgroundColor: "#0a0a0a",
+  androidAdaptiveBackgroundImage: undefined,
+  androidSplashIcon: "./assets/android-splash-mark.png",
+  androidMonochromeIcon: "./assets/android-icon-mark.png",
+  androidNotificationIcon: "./assets/android-notification-icon.png",
+  androidNotificationColor: "#00639B",
+} as const;
+
+const PREVIEW_ASSETS = {
+  appIcon: fromRepoRoot(BRAND_ASSET_PATHS.nightlyIosIconPng),
+  splashIcon: fromRepoRoot(BRAND_ASSET_PATHS.productionMarkPng),
+  androidAdaptiveForeground,
+  androidAdaptiveBackgroundColor: "#0a0a0a",
+  androidAdaptiveBackgroundImage: undefined,
+  androidSplashIcon: "./assets/android-splash-mark.png",
+  androidMonochromeIcon: "./assets/android-icon-mark.png",
+  androidNotificationIcon: "./assets/android-notification-icon.png",
+  androidNotificationColor: "#7565C7",
+} as const;
+
+const RELEASE_ASSETS = {
+  appIcon: fromRepoRoot(BRAND_ASSET_PATHS.productionIosIconPng),
+  splashIcon: fromRepoRoot(BRAND_ASSET_PATHS.productionMarkPng),
+  androidAdaptiveForeground,
+  androidAdaptiveBackgroundColor: "#0a0a0a",
+  androidAdaptiveBackgroundImage: undefined,
+  androidSplashIcon: "./assets/android-splash-mark.png",
+  androidMonochromeIcon: "./assets/android-icon-mark.png",
+  androidNotificationIcon: "./assets/android-notification-icon.png",
+  androidNotificationColor: "#FFFFFF",
+} as const;
+
+const VARIANT_CONFIG = {
+  development: {
+    appName: "CodeWrench Dev",
+    scheme: "codewrench-dev",
+    iosBundleIdentifier: "com.savagedigital.codewrench.dev",
+    androidPackage: "com.savagedigital.codewrench.dev",
+    assets: DEVELOPMENT_ASSETS,
+  },
+  preview: {
+    appName: "CodeWrench Preview",
+    scheme: "codewrench-preview",
+    iosBundleIdentifier: "com.savagedigital.codewrench.preview",
+    androidPackage: "com.savagedigital.codewrench.preview",
+    assets: PREVIEW_ASSETS,
+  },
+  production: {
+    appName: "CodeWrench",
+    scheme: "codewrench",
+    iosBundleIdentifier: "com.savagedigital.codewrench",
+    androidPackage: "com.savagedigital.codewrench",
+    assets: RELEASE_ASSETS,
+  },
+} as const;
+
+function resolveAppVariant(value: string | undefined): AppVariant {
+  switch (value) {
+    case "development":
+    case "preview":
+    case "production":
+      return value;
+    default:
+      return "production";
+  }
+}
+
+const variant = VARIANT_CONFIG[APP_VARIANT];
+// The share extension and the Live Activity widget sign with an App Group, which has to be
+// created in the Apple developer portal by hand. Builds leave both out until it exists.
+const iosAppGroupTargets = !isIosPersonalTeamBuild && repoEnv.CODEWRENCH_IOS_APP_GROUPS === "1";
+const oidcIssuer = (repoEnv.EXPO_PUBLIC_OIDC_ISSUER ?? repoEnv.T3CODE_OIDC_ISSUER)?.trim();
+const oidcClientId = (repoEnv.EXPO_PUBLIC_OIDC_CLIENT_ID ?? repoEnv.T3CODE_OIDC_CLIENT_ID)?.trim();
+const iosBundleIdentifier = isIosPersonalTeamBuild
+  ? personalTeamBundleIdentifier!
+  : variant.iosBundleIdentifier;
+
+const dmSansFonts = {
+  regular: "@expo-google-fonts/dm-sans/400Regular/DMSans_400Regular.ttf",
+  medium: "@expo-google-fonts/dm-sans/500Medium/DMSans_500Medium.ttf",
+  bold: "@expo-google-fonts/dm-sans/700Bold/DMSans_700Bold.ttf",
+} as const;
+
+const widgetsPlugin: NonNullable<ExpoConfig["plugins"]>[number] = [
+  "expo-widgets",
+  {
+    bundleIdentifier: `${iosBundleIdentifier}.widgets`,
+    groupIdentifier: `group.${iosBundleIdentifier}`,
+    enablePushNotifications: true,
+    // Agent activity can update many times an hour; without the
+    // frequent-updates entitlement iOS throttles the update budget sooner.
+    frequentUpdates: true,
+    enableAndroid: true,
+    widgets: [
+      {
+        name: "SubscriptionUsage",
+        displayName: "Subscription usage",
+        description: "Subscription quotas from your connected CodeWrench environments.",
+        ios: {
+          configuration: {
+            title: "Subscription usage",
+            description:
+              "Both shows Session and Weekly when available. The Lock Screen shows the tightest selected limit.",
+            parameters: {
+              codexPeriod: {
+                title: "Codex limits",
+                type: "enum",
+                default: "auto",
+                values: [
+                  { name: "Both", value: "auto" },
+                  { name: "Session", value: "session" },
+                  { name: "Weekly", value: "weekly" },
+                ],
+              },
+              claudePeriod: {
+                title: "Claude limits",
+                type: "enum",
+                default: "auto",
+                values: [
+                  { name: "Both", value: "auto" },
+                  { name: "Session", value: "session" },
+                  { name: "Weekly", value: "weekly" },
+                ],
+              },
+            },
+          },
+          supportedFamilies: [
+            "systemSmall",
+            "systemMedium",
+            "systemLarge",
+            "systemExtraLarge",
+            "accessoryRectangular",
+          ],
+        },
+        android: {
+          minWidth: 250,
+          minHeight: 180,
+          targetCellWidth: 4,
+          targetCellHeight: 3,
+          resizeMode: "both",
+          // Embeds the layout in the APK so the widget renders before the app
+          // has run once; the app replaces it with stored props on publish.
+          initialLayout: "./src/widgets/SubscriptionUsage.android.tsx",
+        },
+      },
+      {
+        name: "AgentActivity",
+        displayName: "Agent Activity",
+        description: "Shows the current state of active CodeWrench agents.",
+        // Live Activity companion; there is no Android presentation for it.
+        android: null,
+        ios: {
+          supportedFamilies: ["systemSmall", "systemMedium", "accessoryRectangular"],
+        },
+      },
+    ],
+  },
+];
+
+const sharingPlugin: NonNullable<ExpoConfig["plugins"]>[number] = [
+  "expo-sharing",
+  {
+    ios: {
+      // Personal Teams cannot sign App Groups or extension targets. Keep the
+      // reduced-capability local build usable while release builds expose the
+      // real system share target.
+      enabled: iosAppGroupTargets,
+      extensionBundleIdentifier: `${iosBundleIdentifier}.sharing`,
+      appGroupId: `group.${iosBundleIdentifier}`,
+      activationRule: {
+        supportsText: true,
+        supportsWebUrlWithMaxCount: 1,
+        supportsImageWithMaxCount: 8,
+        supportsMovieWithMaxCount: 8,
+        supportsFileWithMaxCount: 8,
+      },
+    },
+    android: {
+      enabled: true,
+      singleShareMimeTypes: ["*/*"],
+      multipleShareMimeTypes: ["*/*"],
+    },
+  },
+];
+
+// These aliases match the fonts' PostScript names on iOS. Register the same
+// names on Android so React Native and the native composer use one set of
+// family names without waiting for runtime font loading.
+
+const config: ExpoConfig = {
+  name: variant.appName,
+  slug: "codewrench",
+  platforms: ["ios", "android"],
+  scheme: variant.scheme,
+  version: "2.0.0",
+  runtimeVersion: {
+    // Development manifests resolve on every launch, so avoid fingerprint's
+    // expensive native-project calculation there. Preview and production stay
+    // fingerprinted so OTAs only reach binaries with matching native projects.
+    policy: runtimeVersionPolicy,
+  },
+  orientation: "portrait",
+  icon: variant.assets.appIcon,
+  userInterfaceStyle: "automatic",
+  updates: {
+    enabled: Boolean(EAS_PROJECT_ID) && repoEnv.T3CODE_MOBILE_UPDATES_ENABLED !== "0",
+    ...(EAS_PROJECT_ID ? { url: `https://u.expo.dev/${EAS_PROJECT_ID}` } : {}),
+    checkAutomatically: "ON_LOAD",
+    fallbackToCacheTimeout: 0,
+  },
+  ios: {
+    icon: variant.assets.appIcon,
+    supportsTablet: true,
+    // Multitasking-capable iPad apps cannot rotate programmatically, so the
+    // showcase capture build requires full screen (see infoPlist below).
+    requireFullScreen: process.env.T3_SHOWCASE_CAPTURE_BUILD === "1",
+    bundleIdentifier: iosBundleIdentifier,
+    // Pin code signing to the CodeWrench team so non-interactive `expo run:ios`
+    // does not fall back to a personal team (which cannot sign app groups or
+    // push notification entitlements).
+    appleTeamId: "Y526N249V7",
+    entitlements: {
+      "keychain-access-groups": [`$(AppIdentifierPrefix)${variant.iosBundleIdentifier}`],
+    },
+    infoPlist: {
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: true,
+      },
+      NSLocalNetworkUsageDescription:
+        "Allow CodeWrench to connect to CodeWrench servers on your local network or tailnet.",
+      ITSAppUsesNonExemptEncryption: false,
+      // The App Store screenshot harness rotates the iPad interface from
+      // inside the app (CI denies osascript the Accessibility access that
+      // Simulator menu scripting needs), and iPadOS ignores programmatic
+      // orientation requests for multitasking-capable apps — so the capture
+      // build opts out of multitasking and declares landscape support.
+      ...(process.env.T3_SHOWCASE_CAPTURE_BUILD === "1"
+        ? {
+            "UISupportedInterfaceOrientations~ipad": [
+              "UIInterfaceOrientationPortrait",
+              "UIInterfaceOrientationPortraitUpsideDown",
+              "UIInterfaceOrientationLandscapeLeft",
+              "UIInterfaceOrientationLandscapeRight",
+            ],
+          }
+        : {}),
+    },
+  },
+  android: {
+    icon: variant.assets.appIcon,
+    package: variant.androidPackage,
+    ...(repoEnv.T3CODE_ANDROID_GOOGLE_SERVICES_FILE
+      ? { googleServicesFile: repoEnv.T3CODE_ANDROID_GOOGLE_SERVICES_FILE }
+      : {}),
+    adaptiveIcon: {
+      backgroundColor: variant.assets.androidAdaptiveBackgroundColor,
+      ...(variant.assets.androidAdaptiveBackgroundImage
+        ? { backgroundImage: variant.assets.androidAdaptiveBackgroundImage }
+        : {}),
+      foregroundImage: variant.assets.androidAdaptiveForeground,
+      monochromeImage: variant.assets.androidMonochromeIcon,
+    },
+    // Opts into OnBackInvokedCallback-based back dispatch (Android 13+).
+    // JS back handling survives it via react-native's Android 16 shim plus
+    // withAndroidPredictiveBackCompat on Android 13-15.
+    predictiveBackGestureEnabled: true,
+  },
+  web: {
+    favicon: variant.assets.appIcon,
+  },
+  plugins: [
+    "expo-asset",
+    [
+      "expo-font",
+      {
+        ios: {
+          fonts: [dmSansFonts.regular, dmSansFonts.medium, dmSansFonts.bold],
+        },
+        android: {
+          fonts: [
+            {
+              fontFamily: "DMSans-Regular",
+              fontDefinitions: [{ path: dmSansFonts.regular, weight: 400 }],
+            },
+            {
+              fontFamily: "DMSans-Medium",
+              fontDefinitions: [{ path: dmSansFonts.medium, weight: 500 }],
+            },
+            {
+              fontFamily: "DMSans-Bold",
+              fontDefinitions: [{ path: dmSansFonts.bold, weight: 700 }],
+            },
+          ],
+        },
+      },
+    ],
+    "expo-secure-store",
+    "expo-sqlite",
+    ...(iosAppGroupTargets
+      ? ["./plugins/withShareExtensionDisplayName.cjs", sharingPlugin]
+      : [sharingPlugin]),
+    [
+      "expo-notifications",
+      {
+        icon: variant.assets.androidNotificationIcon,
+        color: variant.assets.androidNotificationColor,
+        mode: APP_VARIANT === "development" ? "development" : "production",
+      },
+    ],
+    "expo-web-browser",
+    [
+      "expo-quick-actions",
+      {
+        // Adaptive launcher-shortcut icon; referenced by resource name from
+        // the shortcut items set in src/features/shortcuts.
+        androidIcons: {
+          shortcut_icon: {
+            foregroundImage: variant.assets.androidAdaptiveForeground,
+            backgroundColor: variant.assets.androidAdaptiveBackgroundColor,
+            ...(variant.assets.androidAdaptiveBackgroundImage
+              ? {
+                  backgroundImage: variant.assets.androidAdaptiveBackgroundImage,
+                }
+              : {}),
+          },
+        },
+      },
+    ],
+    [
+      "expo-audio",
+      {
+        microphonePermission: "Allow CodeWrench to use your microphone for voice input.",
+        recordAudioAndroid: false,
+        enableBackgroundPlayback: false,
+        enableBackgroundRecording: false,
+      },
+    ],
+    [
+      "expo-camera",
+      {
+        cameraPermission:
+          "Allow CodeWrench to access your camera so you can scan pairing QR codes.",
+        microphonePermission: false,
+        barcodeScannerEnabled: true,
+        recordAudioAndroid: false,
+      },
+    ],
+    ["expo-image-picker", { photosPermission: false, microphonePermission: false }],
+    [
+      "expo-splash-screen",
+      {
+        image: variant.assets.splashIcon,
+        resizeMode: "contain",
+        backgroundColor: "#ffffff",
+        imageWidth: 220,
+        dark: {
+          image: variant.assets.splashIcon,
+          backgroundColor: "#0a0a0a",
+        },
+        android: {
+          // Android 12+ masks the splash icon to a circle over the central two thirds of
+          // its 288dp canvas, so the mark sits inside the middle 60% of a transparent canvas.
+          image: variant.assets.androidSplashIcon,
+          imageWidth: 288,
+          dark: { image: variant.assets.androidSplashIcon },
+        },
+      },
+    ],
+    [
+      "expo-build-properties",
+      {
+        android: {
+          // Keep the supported floor explicit and covered by native notification tests.
+          minSdkVersion: 24,
+          // kotlinx-io uses Kotlin 2.3's return-value checker annotation, while
+          // SDK 58 builds with Kotlin 2.2. It has no runtime behavior.
+          extraProguardRules: "-dontwarn kotlin.MustUseReturnValues",
+        },
+        ios: {
+          deploymentTarget: "18.0",
+          // AppCheckCore 11.3+ includes Swift and needs module maps for these Objective-C dependencies.
+          extraPods: [
+            { name: "GoogleUtilities", modular_headers: true },
+            { name: "RecaptchaInterop", modular_headers: true },
+          ],
+        },
+      },
+    ],
+    "./plugins/withIosCocoaPodsUuidCache.cjs",
+    // Must be listed BEFORE expo-widgets: same-type mods run last-registered-
+    // first, so registering earlier makes this plugin's mods run AFTER
+    // expo-widgets' — its dangerous mod wipes ios/ExpoWidgetsTarget/ (which
+    // would delete the asset catalog) and its xcodeproj mod creates the widget
+    // target (which must exist before the compile phase can be attached).
+    ...(iosAppGroupTargets ? ["./plugins/withWidgetLogoAsset.cjs", widgetsPlugin] : []),
+    "./plugins/withAndroidCleartextTraffic.cjs",
+    "./plugins/withAndroidGradleHeap.cjs",
+    "./plugins/withAndroidInputBackground.cjs",
+    "./plugins/withAndroidModernPopupMenu.cjs",
+    "./plugins/withAndroidModernAlertDialog.cjs",
+    "./plugins/withAndroidPredictiveBackCompat.cjs",
+    "./plugins/withAndroidTabletOrientation.cjs",
+    ...(isIosPersonalTeamBuild ? ["./plugins/withoutIosPersonalTeamCapabilities.cjs"] : []),
+  ],
+  extra: {
+    appVariant: APP_VARIANT,
+    iosPersonalTeamBuild: isIosPersonalTeamBuild,
+    iosShareExtension: iosAppGroupTargets,
+    relay: {
+      url: repoEnv.T3CODE_RELAY_URL ?? null,
+    },
+    oidc: {
+      issuer: oidcIssuer || null,
+      clientId: oidcClientId || null,
+    },
+    observability: {
+      tracesUrl: repoEnv.EXPO_PUBLIC_OTLP_TRACES_URL ?? "https://api.axiom.co/v1/traces",
+      tracesDataset: repoEnv.EXPO_PUBLIC_OTLP_TRACES_DATASET ?? null,
+      tracesToken: repoEnv.EXPO_PUBLIC_OTLP_TRACES_TOKEN ?? null,
+    },
+    ...(EAS_PROJECT_ID ? { eas: { projectId: EAS_PROJECT_ID } } : {}),
+  },
+  owner: "candidstudios",
+};
+
+export default config;

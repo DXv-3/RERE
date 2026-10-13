@@ -1,0 +1,70 @@
+[data-voice-conversation] {
+  position: relative;
+  -webkit-app-region: no-drag;
+}
+:is([data-voice-conversation], [data-voice-conversation-panel]) button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+:is([data-voice-conversation], [data-voice-conversation-panel]) button:hover {
+  background: var(--muted);
+}
+:is([data-voice-conversation], [data-voice-conversation-panel]) button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+:is([data-voice-conversation], [data-voice-conversation-panel]) button:focus-visible,
+[data-voice-conversation-panel] input:focus-visible,
+[data-voice-conversation-panel] select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+[data-voice-conversation-panel] {
+  max-height: calc(100dvh - 100px);
+  overflow: auto;
+}
+[data-voice-conversation-panel] header,
+[data-voice-conversation-actions] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+[data-voice-conversation-panel] p {
+  margin-block: 10px;
+  font-size: 13px;
+}
+[data-voice-conversation-panel] [data-voice-price] {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+[data-voice-conversation-panel] form {
+  display: grid;
+  gap: 8px;
+}
+[data-voice-conversation-panel] input,
+[data-voice-conversation-panel] select {
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  width: 100%;
+  font-size: 12px;
+}
+[data-voice-conversation-panel] details {
+  margin-block: 12px;
+  font-size: 12px;
+}
+[data-voice-conversation-panel] pre {
+  white-space: pre-wrap;
+  max-height: 180px;
+  overflow: auto;
+  font-family: inherit;
+}

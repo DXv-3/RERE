@@ -1,0 +1,525 @@
+/*
+  CodeWrench sign-in pages: form column on the left, a quiet brand panel on the right, in the
+  app's neutral palette. Layout and colours live here; template.ftl only adds the brand mark and the panel.
+*/
+/* The app's own neutral palette. Light only, whatever the device setting. */
+:root {
+  --cw-ground: #fcfcfc;
+  --cw-band: #f4f4f5;
+  --cw-field: #ffffff;
+  --cw-card: #ffffff;
+  --cw-ink: #27272a;
+  --cw-muted: #71717a;
+  --cw-line: #e4e4e7;
+  --cw-line-strong: #d4d4d8;
+  --cw-action: #18181b;
+  --cw-action-hover: #3f3f46;
+  --cw-on-action: #ffffff;
+  --cw-focus: #2f5fd0;
+  --cw-done: #10b981;
+  --cw-wait: #f59e0b;
+  --cw-error: #dc2626;
+  --cw-error-fill: rgb(220 38 38 / 0.06);
+  --cw-shadow: 0 20px 50px rgb(24 24 27 / 0.08);
+  --cw-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cw-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+:root,
+.pf-v5-theme-dark {
+  --pf-v5-global--BackgroundColor--100: transparent;
+  --pf-v5-global--Color--100: var(--cw-ink);
+  --pf-v5-global--Color--200: var(--cw-muted);
+  --pf-v5-global--link--Color: var(--cw-ink);
+  --pf-v5-global--link--Color--hover: var(--cw-muted);
+  --pf-v5-global--primary-color--100: var(--cw-action);
+  --pf-v5-global--FontFamily--text: var(--cw-sans);
+  --pf-v5-global--FontFamily--heading: var(--cw-sans);
+}
+
+html.login-pf,
+body#keycloak-bg {
+  margin: 0;
+  min-height: 100%;
+  background: var(--cw-ground) !important;
+  color: var(--cw-ink);
+  color-scheme: light;
+  font-family: var(--cw-sans);
+  font-size: 15px;
+  line-height: 22px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Shell ------------------------------------------------------------------------------ */
+
+.pf-v5-c-login {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 16px;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.pf-v5-c-login__container {
+  display: flex;
+  flex-direction: column;
+  grid-template: none;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding: 32px 64px;
+}
+
+.pf-v5-c-login__header {
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+
+#kc-header-wrapper.cw-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--cw-ink) !important;
+}
+#kc-header-wrapper.cw-brand span {
+  color: var(--cw-ink);
+}
+#kc-header-wrapper.cw-brand img {
+  width: 32px;
+  height: 32px;
+  max-width: none;
+  border-radius: 8px;
+}
+
+.pf-v5-c-login__main {
+  margin: auto 0;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-body,
+.pf-v5-c-login__main-footer {
+  padding: 0;
+}
+.pf-v5-c-login__main-header {
+  margin-bottom: 24px;
+  border: 0;
+}
+.pf-v5-c-login__main-header::before,
+.pf-v5-c-login__main::before {
+  display: none;
+}
+
+#kc-page-title {
+  margin: 0;
+  font-size: 36px;
+  line-height: 42px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--cw-ink);
+}
+
+.cw-legal {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+}
+.cw-legal a {
+  color: var(--cw-muted);
+  text-decoration: none;
+}
+.cw-legal a:hover {
+  color: var(--cw-ink);
+}
+
+/* ---- Form ------------------------------------------------------------------------------- */
+
+.pf-v5-c-form {
+  gap: 0;
+}
+.pf-v5-c-form__group {
+  margin-bottom: 16px;
+}
+.pf-v5-c-form__label,
+.pf-v5-c-form__label-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cw-ink);
+}
+.pf-v5-c-form__group-label {
+  padding-bottom: 6px;
+}
+.pf-v5-c-form__label-required {
+  color: var(--cw-muted);
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BackgroundColor: var(--cw-field);
+  --pf-v5-c-form-control--Color: var(--cw-ink);
+  --pf-v5-c-form-control--before--BorderColor: transparent;
+  --pf-v5-c-form-control--after--BorderBottomColor: transparent;
+  --pf-v5-c-form-control--BorderRadius: 10px;
+  height: 48px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: 10px;
+  background: var(--cw-field);
+  overflow: hidden;
+}
+.pf-v5-c-form-control::before,
+.pf-v5-c-form-control::after {
+  display: none;
+}
+.pf-v5-c-form-control > :is(input, select) {
+  height: 46px;
+  padding: 0 14px;
+  color: var(--cw-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+}
+.pf-v5-c-form-control:focus-within {
+  outline: 2px solid var(--cw-focus);
+  outline-offset: 0;
+  border-color: transparent;
+}
+.pf-v5-c-form-control > input:focus {
+  outline: 0;
+}
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 50px var(--cw-field) inset;
+  -webkit-text-fill-color: var(--cw-ink);
+  caret-color: var(--cw-ink);
+}
+
+/* Password field with its show/hide control inside the same rounded box. */
+.pf-v5-c-input-group {
+  gap: 8px;
+}
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+  --pf-v5-c-button--m-control--BackgroundColor: var(--cw-field);
+  --pf-v5-c-button--m-control--Color: var(--cw-muted);
+  --pf-v5-c-button--m-control--hover--Color: var(--cw-ink);
+  height: 48px;
+  min-width: 48px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: 10px;
+}
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control::after {
+  display: none;
+}
+
+.pf-v5-c-check__label,
+#kc-form-options,
+.pf-v5-c-login__main-body a {
+  font-size: 13px;
+}
+.pf-v5-c-check__input {
+  accent-color: var(--cw-action);
+}
+.pf-v5-c-helper-text__item-text,
+.subtitle {
+  color: var(--cw-muted);
+  font-size: 13px;
+}
+.pf-v5-c-helper-text__item.pf-m-error .pf-v5-c-helper-text__item-text,
+.kc-feedback-text {
+  color: var(--cw-ink);
+}
+
+.pf-v5-c-button.pf-m-primary,
+input[type="submit"].pf-v5-c-button {
+  --pf-v5-c-button--m-primary--BackgroundColor: var(--cw-action);
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--cw-action-hover);
+  --pf-v5-c-button--m-primary--active--BackgroundColor: var(--cw-action-hover);
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--cw-action);
+  --pf-v5-c-button--m-primary--Color: var(--cw-on-action);
+  --pf-v5-c-button--m-primary--hover--Color: var(--cw-on-action);
+  min-height: 48px;
+  margin-top: 8px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background-color 180ms ease;
+}
+.pf-v5-c-button.pf-m-primary::after {
+  border-radius: 10px;
+}
+.pf-v5-c-button.pf-m-secondary,
+.pf-v5-c-button.pf-m-link {
+  --pf-v5-c-button--m-secondary--Color: var(--cw-ink);
+  --pf-v5-c-button--after--BorderColor: var(--cw-line-strong);
+  border-radius: 10px;
+}
+
+a {
+  color: var(--cw-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--cw-line-strong);
+}
+a:hover {
+  color: var(--cw-ink);
+  text-decoration-color: var(--cw-ink);
+}
+:focus-visible {
+  outline: 2px solid var(--cw-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.pf-v5-c-login__main-footer-band {
+  margin-top: 24px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--cw-muted);
+  font-size: 14px;
+  text-align: left;
+}
+.pf-v5-c-login__main-footer-band-item {
+  padding: 0;
+}
+
+.pf-v5-c-alert {
+  --pf-v5-c-alert--BackgroundColor: var(--cw-band);
+  --pf-v5-c-alert--BorderTopWidth: 0;
+  --pf-v5-c-alert--BoxShadow: none;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: 10px;
+  color: var(--cw-ink);
+  font-size: 14px;
+}
+.pf-v5-c-alert.pf-m-danger {
+  background: var(--cw-error-fill);
+  border-color: var(--cw-error);
+}
+.pf-v5-c-alert__title {
+  color: var(--cw-ink);
+  font-weight: 500;
+}
+
+/* ---- Brand panel ------------------------------------------------------------------------ */
+
+.cw-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--cw-line);
+  background:
+    linear-gradient(var(--cw-line) 1px, transparent 1px) 0 0 / 100% 40px,
+    linear-gradient(90deg, var(--cw-line) 1px, transparent 1px) 0 0 / 40px 100%,
+    var(--cw-band);
+}
+.cw-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, var(--cw-band) 0%, transparent 55%);
+}
+
+.cw-session {
+  position: absolute;
+  top: 14%;
+  left: 48px;
+  right: 48px;
+  max-width: 520px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: 14px;
+  background: var(--cw-card);
+  box-shadow: var(--cw-shadow);
+}
+.cw-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--cw-line);
+}
+.cw-session-bar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cw-line-strong);
+}
+.cw-session-bar em {
+  margin-left: 10px;
+  font-family: var(--cw-mono);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-muted);
+}
+.cw-session ul {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+.cw-session li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 14px;
+}
+.cw-session i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cw-session i.is-run {
+  background: var(--cw-focus);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--cw-focus) 18%, transparent);
+}
+.cw-session i.is-done {
+  background: var(--cw-done);
+}
+.cw-session i.is-wait {
+  background: var(--cw-wait);
+}
+.cw-session b {
+  font-weight: 500;
+  color: var(--cw-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cw-session small {
+  font-family: var(--cw-mono);
+  font-size: 12px;
+  color: var(--cw-muted);
+  white-space: nowrap;
+}
+
+.cw-panel-copy {
+  position: absolute;
+  left: 48px;
+  right: 48px;
+  bottom: 48px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cw-eyebrow {
+  font-family: var(--cw-mono);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-muted);
+}
+.cw-panel-line {
+  max-width: 480px;
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 500;
+  color: var(--cw-ink);
+}
+
+/* ---- Pages after sign-in: verify email, error, info, page expired, sign out ---------------------
+   These come from Keycloak's base login theme, not keycloak.v2. They use the same template, but their
+   markup leans on class names keycloak.v2 never defines (kcButtonDefaultClass, kcButtonLargeClass,
+   kcFormButtonsClass), so buttons arrive as a bare .pf-v5-c-button and the text as plain <p class="instruction">. */
+
+.instruction,
+#kc-error-message p,
+#kc-info-message p,
+#kc-logout-confirm p {
+  margin: 0 0 16px;
+  color: var(--cw-muted);
+  font-size: 15px;
+  line-height: 22px;
+}
+#kc-error-message,
+#kc-info-message {
+  margin-top: 0;
+}
+#kc-info-message a,
+#kc-logout-confirm a {
+  font-size: 14px;
+}
+
+#kc-form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+#kc-form-buttons > * {
+  flex: 0 1 auto;
+}
+#kc-form-buttons > .pf-m-block {
+  flex: 1 1 100%;
+}
+
+/* A button with no modifier class (cancel, resend) reads as the quiet button. */
+.pf-v5-c-login__main-body
+  .pf-v5-c-button:not(.pf-m-primary):not(.pf-m-secondary):not(.pf-m-tertiary):not(.pf-m-link):not(
+    .pf-m-control
+  ):not(.pf-m-plain):not(.pf-m-danger) {
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 0 20px;
+  border: 1px solid var(--cw-line-strong);
+  border-radius: 10px;
+  background: var(--cw-field);
+  color: var(--cw-ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+.pf-v5-c-login__main-body
+  .pf-v5-c-button:not(.pf-m-primary):not(.pf-m-secondary):not(.pf-m-tertiary):not(.pf-m-link):not(
+    .pf-m-control
+  ):not(.pf-m-plain):not(.pf-m-danger):hover {
+  background: var(--cw-band);
+}
+
+/* ---- Narrow screens: the form alone ------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .pf-v5-c-login {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 12px;
+  }
+  .cw-panel {
+    display: none;
+  }
+  .pf-v5-c-login__container {
+    flex: 1;
+    padding: 20px 12px 24px;
+  }
+  .pf-v5-c-login__main {
+    max-width: none;
+    padding: 20px 0;
+  }
+  #kc-page-title {
+    font-size: 30px;
+    line-height: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

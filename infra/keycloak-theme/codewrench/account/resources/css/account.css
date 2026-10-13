@@ -1,0 +1,181 @@
+/*
+  CodeWrench account console: the keycloak.v3 React app, restyled by overriding PatternFly 5 variables.
+  Same palette and fonts as login/resources/css/pages.css (copied, since themes do not share files).
+  Light only: no dark mode, no accent colour. The primary action is near-black.
+  Class names inside the app are hashed by the build, so only stable pf-v5-* classes and the
+  variables are used here.
+*/
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap");
+
+:root {
+  --cw-ground: #fcfcfc;
+  --cw-band: #f4f4f5;
+  --cw-field: #ffffff;
+  --cw-card: #ffffff;
+  --cw-ink: #27272a;
+  --cw-muted: #71717a;
+  --cw-line: #e4e4e7;
+  --cw-line-strong: #d4d4d8;
+  --cw-action: #18181b;
+  --cw-action-hover: #3f3f46;
+  --cw-on-action: #ffffff;
+  --cw-focus: #2f5fd0;
+  --cw-error: #dc2626;
+  --cw-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cw-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* ---- PatternFly variables -------------------------------------------------------------- */
+:root {
+  --pf-v5-global--FontFamily--text: var(--cw-sans);
+  --pf-v5-global--FontFamily--heading: var(--cw-sans);
+  --pf-v5-global--FontFamily--sans-serif: var(--cw-sans);
+  --pf-v5-global--FontFamily--monospace: var(--cw-mono);
+
+  --pf-v5-global--BackgroundColor--100: var(--cw-card);
+  --pf-v5-global--BackgroundColor--200: var(--cw-band);
+  --pf-v5-global--BackgroundColor--light-100: var(--cw-card);
+  --pf-v5-global--BackgroundColor--light-200: var(--cw-band);
+  --pf-v5-global--BackgroundColor--light-300: var(--cw-band);
+  --pf-v5-c-page--BackgroundColor: var(--cw-ground);
+
+  --pf-v5-global--Color--100: var(--cw-ink);
+  --pf-v5-global--Color--200: var(--cw-muted);
+  --pf-v5-global--Color--dark-100: var(--cw-ink);
+  --pf-v5-global--Color--dark-200: var(--cw-muted);
+
+  --pf-v5-global--BorderColor--100: var(--cw-line-strong);
+  --pf-v5-global--BorderColor--200: var(--cw-line);
+  --pf-v5-global--BorderColor--300: var(--cw-line);
+  --pf-v5-global--BorderColor--dark-100: var(--cw-line-strong);
+
+  /* Primary actions, links and "active" highlights: near-black instead of PatternFly blue. */
+  --pf-v5-global--primary-color--100: var(--cw-action);
+  --pf-v5-global--primary-color--200: var(--cw-action-hover);
+  --pf-v5-global--primary-color--dark-100: var(--cw-action);
+  --pf-v5-global--active-color--100: var(--cw-action);
+  --pf-v5-global--active-color--200: var(--cw-action);
+  --pf-v5-global--active-color--300: var(--cw-action);
+  --pf-v5-global--active-color--400: var(--cw-action);
+  --pf-v5-global--link--Color: var(--cw-ink);
+  --pf-v5-global--link--Color--hover: var(--cw-muted);
+  --pf-v5-global--link--Color--dark: var(--cw-ink);
+  --pf-v5-global--link--Color--dark--hover: var(--cw-muted);
+
+  --pf-v5-global--danger-color--100: var(--cw-error);
+  --pf-v5-global--danger-color--200: var(--cw-error);
+
+  --pf-v5-global--BorderRadius--sm: 10px;
+  --pf-v5-global--BorderRadius--lg: 14px;
+}
+
+html,
+body {
+  background: var(--cw-ground);
+  color: var(--cw-ink);
+  color-scheme: light;
+  font-family: var(--cw-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The loading screen has its own dark rule for dark devices; keep it light. */
+.keycloak__loading-container {
+  color: var(--cw-ink) !important;
+  background-color: var(--cw-ground) !important;
+}
+
+/* ---- Header and sidebar: PatternFly paints both dark by default ----------------------------- */
+.pf-v5-c-masthead,
+.pf-v5-c-page__header {
+  --pf-v5-global--Color--100: var(--cw-ink);
+  --pf-v5-global--Color--200: var(--cw-muted);
+  --pf-v5-global--BorderColor--100: var(--cw-line);
+  --pf-v5-global--primary-color--100: var(--cw-action);
+  --pf-v5-global--link--Color: var(--cw-ink);
+  --pf-v5-global--link--Color--hover: var(--cw-muted);
+  --pf-v5-global--BackgroundColor--100: var(--cw-card);
+  --pf-v5-global--icon--Color--light: var(--cw-muted);
+  --pf-v5-global--icon--Color--dark: var(--cw-ink);
+  --pf-v5-c-masthead--BackgroundColor: var(--cw-card);
+  --pf-v5-c-page__header--BackgroundColor: var(--cw-card);
+  background-color: var(--cw-card);
+  color: var(--cw-ink);
+  border-bottom: 1px solid var(--cw-line);
+}
+
+.pf-v5-c-page__sidebar {
+  --pf-v5-c-page__sidebar--BackgroundColor: var(--cw-card);
+  background-color: var(--cw-card);
+  color: var(--cw-ink);
+  border-inline-end: 1px solid var(--cw-line);
+}
+
+.pf-v5-c-nav {
+  --pf-v5-c-nav__link--Color: var(--cw-muted);
+  --pf-v5-c-nav__link--hover--Color: var(--cw-ink);
+  --pf-v5-c-nav__link--focus--Color: var(--cw-ink);
+  --pf-v5-c-nav__link--active--Color: var(--cw-ink);
+  --pf-v5-c-nav__link--m-current--Color: var(--cw-ink);
+  --pf-v5-c-nav__link--hover--BackgroundColor: var(--cw-band);
+  --pf-v5-c-nav__link--focus--BackgroundColor: var(--cw-band);
+  --pf-v5-c-nav__link--active--BackgroundColor: var(--cw-band);
+  --pf-v5-c-nav__link--m-current--BackgroundColor: var(--cw-band);
+  --pf-v5-c-nav__item--m-current--not--m-expanded__link--BackgroundColor: var(--cw-band);
+  --pf-v5-c-nav__link--after--BorderColor: var(--cw-action);
+  --pf-v5-c-nav__link--hover--after--BorderColor: var(--cw-action);
+  --pf-v5-c-nav__link--focus--after--BorderColor: var(--cw-action);
+  --pf-v5-c-nav__link--active--after--BorderColor: var(--cw-action);
+  --pf-v5-c-nav__link--m-current--after--BorderColor: var(--cw-action);
+}
+
+/* ---- Controls --------------------------------------------------------------------------- */
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--m-primary--BackgroundColor: var(--cw-action);
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--cw-action-hover);
+  --pf-v5-c-button--m-primary--active--BackgroundColor: var(--cw-action-hover);
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--cw-action);
+  --pf-v5-c-button--m-primary--Color: var(--cw-on-action);
+  --pf-v5-c-button--m-primary--hover--Color: var(--cw-on-action);
+  font-weight: 600;
+}
+.pf-v5-c-button.pf-m-secondary {
+  --pf-v5-c-button--m-secondary--Color: var(--cw-ink);
+  --pf-v5-c-button--m-secondary--hover--Color: var(--cw-ink);
+  --pf-v5-c-button--m-secondary--BorderColor: var(--cw-line-strong);
+  --pf-v5-c-button--m-secondary--hover--BorderColor: var(--cw-ink);
+  --pf-v5-c-button--after--BorderColor: var(--cw-line-strong);
+}
+.pf-v5-c-button.pf-m-link,
+.pf-v5-c-button.pf-m-link:hover {
+  --pf-v5-c-button--m-link--Color: var(--cw-ink);
+  --pf-v5-c-button--m-link--hover--Color: var(--cw-muted);
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BackgroundColor: var(--cw-field);
+  --pf-v5-c-form-control--Color: var(--cw-ink);
+  --pf-v5-c-form-control--BorderColor: var(--cw-line-strong);
+}
+
+.pf-v5-c-card {
+  --pf-v5-c-card--BackgroundColor: var(--cw-card);
+  border: 1px solid var(--cw-line);
+  box-shadow: none;
+}
+
+.pf-v5-c-check__input,
+.pf-v5-c-radio__input,
+.pf-v5-c-switch__input {
+  accent-color: var(--cw-action);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cw-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
